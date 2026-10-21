@@ -1,0 +1,7 @@
+Citra,Operator,Rerata |G|,Maks |G|,Ambang,Jumlah tepi,Kepadatan (%),Waktu (ms),Rasio |Gx|:|Gy|,Arah dominan,Arah dominan (%)
+Burj Khalifa,Sobel,9.12,207.1,60.0,5323,4.861,5.49,1.51,-,-
+Burj Khalifa,Roberts,10.36,290.6,60.0,6618,6.044,3.83,0.988,-,-
+Burj Khalifa,Kompas (Kirsch),7.84,186.3,60.0,3521,3.216,23.18,-,T,29.6
+Jalan Route 66,Sobel,10.98,143.8,60.0,8133,1.907,20.53,0.815,-,-
+Jalan Route 66,Roberts,11.97,196.0,60.0,6529,1.531,14.17,0.98,-,-
+Jalan Route 66,Kompas (Kirsch),9.17,125.2,60.0,3902,0.915,89.87,-,S,20.7

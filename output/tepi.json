@@ -1,0 +1,581 @@
+{
+  "parameter": {
+    "ambang_tepi": 60.0,
+    "ambang_sapuan": [
+      30,
+      45,
+      60,
+      75,
+      90
+    ],
+    "normalisasi": "Magnitudo mentah dibagi jumlah bobot positif mask (Sobel 4, Roberts 1, Kompas 15)."
+  },
+  "operator": {
+    "sobel": {
+      "judul": "Sobel",
+      "jenis": "gradien",
+      "skala": 4.0,
+      "keterangan": "Mask 3x3 dengan pembobotan 1-2-1",
+      "mask_x": [
+        [
+          -1,
+          0,
+          1
+        ],
+        [
+          -2,
+          0,
+          2
+        ],
+        [
+          -1,
+          0,
+          1
+        ]
+      ],
+      "mask_y": [
+        [
+          -1,
+          -2,
+          -1
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          2,
+          1
+        ]
+      ],
+      "mask": null,
+      "arah": null
+    },
+    "roberts": {
+      "judul": "Roberts",
+      "jenis": "gradien",
+      "skala": 1.0,
+      "keterangan": "Mask 2x2 diagonal",
+      "mask_x": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "mask_y": [
+        [
+          0,
+          1
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "mask": null,
+      "arah": null
+    },
+    "kompas": {
+      "judul": "Kompas (Kirsch)",
+      "jenis": "kompas",
+      "skala": 15.0,
+      "keterangan": "Delapan mask 3x3, diputar tiap 45 derajat",
+      "mask_x": null,
+      "mask_y": null,
+      "mask": [
+        [
+          [
+            5,
+            5,
+            5
+          ],
+          [
+            -3,
+            0,
+            -3
+          ],
+          [
+            -3,
+            -3,
+            -3
+          ]
+        ],
+        [
+          [
+            5,
+            5,
+            -3
+          ],
+          [
+            5,
+            0,
+            -3
+          ],
+          [
+            -3,
+            -3,
+            -3
+          ]
+        ],
+        [
+          [
+            5,
+            -3,
+            -3
+          ],
+          [
+            5,
+            0,
+            -3
+          ],
+          [
+            5,
+            -3,
+            -3
+          ]
+        ],
+        [
+          [
+            -3,
+            -3,
+            -3
+          ],
+          [
+            5,
+            0,
+            -3
+          ],
+          [
+            5,
+            5,
+            -3
+          ]
+        ],
+        [
+          [
+            -3,
+            -3,
+            -3
+          ],
+          [
+            -3,
+            0,
+            -3
+          ],
+          [
+            5,
+            5,
+            5
+          ]
+        ],
+        [
+          [
+            -3,
+            -3,
+            -3
+          ],
+          [
+            -3,
+            0,
+            5
+          ],
+          [
+            -3,
+            5,
+            5
+          ]
+        ],
+        [
+          [
+            -3,
+            -3,
+            5
+          ],
+          [
+            -3,
+            0,
+            5
+          ],
+          [
+            -3,
+            -3,
+            5
+          ]
+        ],
+        [
+          [
+            -3,
+            5,
+            5
+          ],
+          [
+            -3,
+            0,
+            5
+          ],
+          [
+            -3,
+            -3,
+            -3
+          ]
+        ]
+      ],
+      "arah": [
+        "U",
+        "BL",
+        "B",
+        "BD",
+        "S",
+        "TG",
+        "T",
+        "TL"
+      ]
+    }
+  },
+  "citra": [
+    {
+      "kunci": "burj",
+      "judul": "Burj Khalifa",
+      "berkas": "img/Burj_Khalifa.avif",
+      "ukuran_asli": [
+        250,
+        438
+      ],
+      "ukuran_proses": [
+        250,
+        438
+      ],
+      "selisih_konvolusi": 0.0,
+      "operator": {
+        "sobel": {
+          "rerata_magnitudo": 9.12,
+          "maks_magnitudo": 207.1,
+          "ambang": 60.0,
+          "jumlah_tepi": 5323,
+          "kepadatan_tepi_persen": 4.861,
+          "waktu_ms": 5.49,
+          "rasio_gx_gy": 1.51
+        },
+        "roberts": {
+          "rerata_magnitudo": 10.36,
+          "maks_magnitudo": 290.6,
+          "ambang": 60.0,
+          "jumlah_tepi": 6618,
+          "kepadatan_tepi_persen": 6.044,
+          "waktu_ms": 3.83,
+          "rasio_gx_gy": 0.988
+        },
+        "kompas": {
+          "rerata_magnitudo": 7.84,
+          "maks_magnitudo": 186.3,
+          "ambang": 60.0,
+          "jumlah_tepi": 3521,
+          "kepadatan_tepi_persen": 3.216,
+          "waktu_ms": 23.18,
+          "arah_dominan": "T",
+          "arah_dominan_persen": 29.6,
+          "sebaran_arah": [
+            {
+              "arah": "U",
+              "jumlah": 440,
+              "persen": 12.5
+            },
+            {
+              "arah": "BL",
+              "jumlah": 145,
+              "persen": 4.1
+            },
+            {
+              "arah": "B",
+              "jumlah": 932,
+              "persen": 26.5
+            },
+            {
+              "arah": "BD",
+              "jumlah": 166,
+              "persen": 4.7
+            },
+            {
+              "arah": "S",
+              "jumlah": 460,
+              "persen": 13.1
+            },
+            {
+              "arah": "TG",
+              "jumlah": 163,
+              "persen": 4.6
+            },
+            {
+              "arah": "T",
+              "jumlah": 1043,
+              "persen": 29.6
+            },
+            {
+              "arah": "TL",
+              "jumlah": 172,
+              "persen": 4.9
+            }
+          ]
+        }
+      },
+      "sapuan": {
+        "sobel": [
+          {
+            "ambang": 30,
+            "jumlah_tepi": 12411,
+            "kepadatan_persen": 11.334
+          },
+          {
+            "ambang": 45,
+            "jumlah_tepi": 8306,
+            "kepadatan_persen": 7.585
+          },
+          {
+            "ambang": 60,
+            "jumlah_tepi": 5323,
+            "kepadatan_persen": 4.861
+          },
+          {
+            "ambang": 75,
+            "jumlah_tepi": 3248,
+            "kepadatan_persen": 2.966
+          },
+          {
+            "ambang": 90,
+            "jumlah_tepi": 1841,
+            "kepadatan_persen": 1.681
+          }
+        ],
+        "roberts": [
+          {
+            "ambang": 30,
+            "jumlah_tepi": 14083,
+            "kepadatan_persen": 12.861
+          },
+          {
+            "ambang": 45,
+            "jumlah_tepi": 9795,
+            "kepadatan_persen": 8.945
+          },
+          {
+            "ambang": 60,
+            "jumlah_tepi": 6618,
+            "kepadatan_persen": 6.044
+          },
+          {
+            "ambang": 75,
+            "jumlah_tepi": 4313,
+            "kepadatan_persen": 3.939
+          },
+          {
+            "ambang": 90,
+            "jumlah_tepi": 2802,
+            "kepadatan_persen": 2.559
+          }
+        ],
+        "kompas": [
+          {
+            "ambang": 30,
+            "jumlah_tepi": 11131,
+            "kepadatan_persen": 10.165
+          },
+          {
+            "ambang": 45,
+            "jumlah_tepi": 6396,
+            "kepadatan_persen": 5.841
+          },
+          {
+            "ambang": 60,
+            "jumlah_tepi": 3521,
+            "kepadatan_persen": 3.216
+          },
+          {
+            "ambang": 75,
+            "jumlah_tepi": 1839,
+            "kepadatan_persen": 1.679
+          },
+          {
+            "ambang": 90,
+            "jumlah_tepi": 912,
+            "kepadatan_persen": 0.833
+          }
+        ]
+      }
+    },
+    {
+      "kunci": "route66",
+      "judul": "Jalan Route 66",
+      "berkas": "img/D11_Williams_Route_66_1.avif",
+      "ukuran_asli": [
+        800,
+        533
+      ],
+      "ukuran_proses": [
+        800,
+        533
+      ],
+      "selisih_konvolusi": 0.0,
+      "operator": {
+        "sobel": {
+          "rerata_magnitudo": 10.98,
+          "maks_magnitudo": 143.8,
+          "ambang": 60.0,
+          "jumlah_tepi": 8133,
+          "kepadatan_tepi_persen": 1.907,
+          "waktu_ms": 20.53,
+          "rasio_gx_gy": 0.815
+        },
+        "roberts": {
+          "rerata_magnitudo": 11.97,
+          "maks_magnitudo": 196.0,
+          "ambang": 60.0,
+          "jumlah_tepi": 6529,
+          "kepadatan_tepi_persen": 1.531,
+          "waktu_ms": 14.17,
+          "rasio_gx_gy": 0.98
+        },
+        "kompas": {
+          "rerata_magnitudo": 9.17,
+          "maks_magnitudo": 125.2,
+          "ambang": 60.0,
+          "jumlah_tepi": 3902,
+          "kepadatan_tepi_persen": 0.915,
+          "waktu_ms": 89.87,
+          "arah_dominan": "S",
+          "arah_dominan_persen": 20.7,
+          "sebaran_arah": [
+            {
+              "arah": "U",
+              "jumlah": 649,
+              "persen": 16.6
+            },
+            {
+              "arah": "BL",
+              "jumlah": 315,
+              "persen": 8.1
+            },
+            {
+              "arah": "B",
+              "jumlah": 434,
+              "persen": 11.1
+            },
+            {
+              "arah": "BD",
+              "jumlah": 274,
+              "persen": 7.0
+            },
+            {
+              "arah": "S",
+              "jumlah": 807,
+              "persen": 20.7
+            },
+            {
+              "arah": "TG",
+              "jumlah": 370,
+              "persen": 9.5
+            },
+            {
+              "arah": "T",
+              "jumlah": 445,
+              "persen": 11.4
+            },
+            {
+              "arah": "TL",
+              "jumlah": 608,
+              "persen": 15.6
+            }
+          ]
+        }
+      },
+      "sapuan": {
+        "sobel": [
+          {
+            "ambang": 30,
+            "jumlah_tepi": 31380,
+            "kepadatan_persen": 7.359
+          },
+          {
+            "ambang": 45,
+            "jumlah_tepi": 14586,
+            "kepadatan_persen": 3.421
+          },
+          {
+            "ambang": 60,
+            "jumlah_tepi": 8133,
+            "kepadatan_persen": 1.907
+          },
+          {
+            "ambang": 75,
+            "jumlah_tepi": 4311,
+            "kepadatan_persen": 1.011
+          },
+          {
+            "ambang": 90,
+            "jumlah_tepi": 1713,
+            "kepadatan_persen": 0.402
+          }
+        ],
+        "roberts": [
+          {
+            "ambang": 30,
+            "jumlah_tepi": 35922,
+            "kepadatan_persen": 8.424
+          },
+          {
+            "ambang": 45,
+            "jumlah_tepi": 13038,
+            "kepadatan_persen": 3.058
+          },
+          {
+            "ambang": 60,
+            "jumlah_tepi": 6529,
+            "kepadatan_persen": 1.531
+          },
+          {
+            "ambang": 75,
+            "jumlah_tepi": 3596,
+            "kepadatan_persen": 0.843
+          },
+          {
+            "ambang": 90,
+            "jumlah_tepi": 1743,
+            "kepadatan_persen": 0.409
+          }
+        ],
+        "kompas": [
+          {
+            "ambang": 30,
+            "jumlah_tepi": 20082,
+            "kepadatan_persen": 4.71
+          },
+          {
+            "ambang": 45,
+            "jumlah_tepi": 8681,
+            "kepadatan_persen": 2.036
+          },
+          {
+            "ambang": 60,
+            "jumlah_tepi": 3902,
+            "kepadatan_persen": 0.915
+          },
+          {
+            "ambang": 75,
+            "jumlah_tepi": 1246,
+            "kepadatan_persen": 0.292
+          },
+          {
+            "ambang": 90,
+            "jumlah_tepi": 164,
+            "kepadatan_persen": 0.038
+          }
+        ]
+      }
+    }
+  ]
+}

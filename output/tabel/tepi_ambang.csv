@@ -1,0 +1,31 @@
+Citra,Operator,ambang,jumlah_tepi,kepadatan_persen
+Burj Khalifa,Sobel,30,12411,11.334
+Burj Khalifa,Sobel,45,8306,7.585
+Burj Khalifa,Sobel,60,5323,4.861
+Burj Khalifa,Sobel,75,3248,2.966
+Burj Khalifa,Sobel,90,1841,1.681
+Burj Khalifa,Roberts,30,14083,12.861
+Burj Khalifa,Roberts,45,9795,8.945
+Burj Khalifa,Roberts,60,6618,6.044
+Burj Khalifa,Roberts,75,4313,3.939
+Burj Khalifa,Roberts,90,2802,2.559
+Burj Khalifa,Kompas (Kirsch),30,11131,10.165
+Burj Khalifa,Kompas (Kirsch),45,6396,5.841
+Burj Khalifa,Kompas (Kirsch),60,3521,3.216
+Burj Khalifa,Kompas (Kirsch),75,1839,1.679
+Burj Khalifa,Kompas (Kirsch),90,912,0.833
+Jalan Route 66,Sobel,30,31380,7.359
+Jalan Route 66,Sobel,45,14586,3.421
+Jalan Route 66,Sobel,60,8133,1.907
+Jalan Route 66,Sobel,75,4311,1.011
+Jalan Route 66,Sobel,90,1713,0.402
+Jalan Route 66,Roberts,30,35922,8.424
+Jalan Route 66,Roberts,45,13038,3.058
+Jalan Route 66,Roberts,60,6529,1.531
+Jalan Route 66,Roberts,75,3596,0.843
+Jalan Route 66,Roberts,90,1743,0.409
+Jalan Route 66,Kompas (Kirsch),30,20082,4.71
+Jalan Route 66,Kompas (Kirsch),45,8681,2.036
+Jalan Route 66,Kompas (Kirsch),60,3902,0.915
+Jalan Route 66,Kompas (Kirsch),75,1246,0.292
+Jalan Route 66,Kompas (Kirsch),90,164,0.038
