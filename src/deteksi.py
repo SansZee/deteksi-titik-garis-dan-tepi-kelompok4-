@@ -106,7 +106,7 @@ DAFTAR_CITRA = [
         "kunci": "burj",
         "judul": "Burj Khalifa",
         "berkas": "Burj_Khalifa.avif",
-        "lebar_proses": None,
+        "lebar_proses": LEBAR_PROSES,
     },
     {
         "kunci": "route66",
@@ -133,16 +133,21 @@ plt.rcParams.update(
 
 
 # ---------------------------------------------------------------------------
-# Pemuatan citra dan konvolusi
+# Pemuatan citra dan korelasi
 # ---------------------------------------------------------------------------
 
 
-def muat_citra(berkas: Path, lebar_proses: int | None) -> tuple[np.ndarray, np.ndarray]:
+def muat_citra(
+    berkas: Path, lebar_proses: int | None
+) -> tuple[np.ndarray, np.ndarray, tuple[int, int]]:
     """Baca citra, perkecil bila perlu, lalu ubah ke citra keabuan.
 
     Pengurangan ukuran memakai interpolasi area agar tekstur halus tidak
     menimbulkan derau baru. Pengubahan ke keabuan memakai rumus luminansi
     standar OpenCV: 0,299 R + 0,587 G + 0,114 B.
+
+    Nilai kembalian ketiga adalah ukuran asli (lebar, tinggi) sebelum
+    diperkecil, supaya laporan tetap mencatat ukuran berkas asli.
     """
     warna = cv2.imread(str(berkas), cv2.IMREAD_COLOR)
     if warna is None:
@@ -161,22 +166,25 @@ def muat_citra(berkas: Path, lebar_proses: int | None) -> tuple[np.ndarray, np.n
             ) from galat
 
     tinggi_asli, lebar_asli = warna.shape[:2]
+    ukuran_asli = (lebar_asli, tinggi_asli)
     if lebar_proses is not None and lebar_asli > lebar_proses:
         skala = lebar_proses / lebar_asli
         ukuran = (lebar_proses, int(round(tinggi_asli * skala)))
         warna = cv2.resize(warna, ukuran, interpolation=cv2.INTER_AREA)
 
     keabuan = cv2.cvtColor(warna, cv2.COLOR_BGR2GRAY)
-    return warna, keabuan
+    return warna, keabuan, ukuran_asli
 
 
-def konvolusi(keabuan: np.ndarray, mask: np.ndarray) -> np.ndarray:
+def korelasi(keabuan: np.ndarray, mask: np.ndarray) -> np.ndarray:
     """Terapkan mask 3x3 dengan penjumlahan hasil kali di tiap posisi.
 
-    Mask diterapkan seperti pada buku teks, yaitu tanpa pembalikan mask,
-    sehingga hasilnya sama dengan cv2.filter2D. Batas citra diisi dengan
-    nilai piksel tepi terdekat (edge padding) supaya tidak muncul tepi
-    palsu di bingkai citra.
+    Mask dipakai tanpa dibalik 180 derajat, sehingga operasi ini adalah
+    korelasi silang, sama seperti cv2.filter2D. Untuk mask Laplacian dan
+    garis yang simetris, hasilnya sama dengan konvolusi. Pada Prewitt,
+    perbedaannya hanya tanda dan hilang saat diambil magnitudo.
+    Batas citra diisi dengan nilai piksel tepi terdekat (edge padding)
+    supaya tidak muncul tepi palsu di bingkai citra.
     """
     citra = keabuan.astype(np.float32)
     mask = np.asarray(mask, dtype=np.float32)
@@ -188,11 +196,11 @@ def konvolusi(keabuan: np.ndarray, mask: np.ndarray) -> np.ndarray:
     return np.einsum("ijkl,kl->ij", jendela, mask)
 
 
-def verifikasi_konvolusi(keabuan: np.ndarray) -> float:
-    """Bandingkan konvolusi manual dengan cv2.filter2D untuk semua mask."""
+def verifikasi_korelasi(keabuan: np.ndarray) -> float:
+    """Bandingkan korelasi manual dengan cv2.filter2D untuk semua mask."""
     selisih = 0.0
     for mask in (MASK_TITIK, MASK_GARIS_H, MASK_GARIS_V, MASK_GX, MASK_GY):
-        manual = konvolusi(keabuan, mask)
+        manual = korelasi(keabuan, mask)
         acuan = cv2.filter2D(
             keabuan.astype(np.float32),
             cv2.CV_32F,
@@ -213,10 +221,10 @@ def deteksi_titik(
 ) -> tuple[np.ndarray, float, np.ndarray]:
     """Hitung respons titik dan tandai titik yang melewati ambang.
 
-    Respons R adalah nilai mutlak hasil konvolusi mask 8 tetangga. Titik
+    Respons R adalah nilai mutlak hasil korelasi mask 8 tetangga. Titik
     dianggap ada bila R >= T, dengan T ditetapkan dari persentil respons.
     """
-    respons = np.abs(konvolusi(keabuan, MASK_TITIK))
+    respons = np.abs(korelasi(keabuan, MASK_TITIK))
     ambang = float(np.percentile(respons, persentil))
     titik = respons >= ambang
     return respons, ambang, titik
@@ -232,8 +240,8 @@ def deteksi_garis(
     di atas latar gelap maupun garis gelap di atas latar terang ikut
     terdeteksi. Piksel dianggap garis bila |R| >= ambang.
     """
-    rh = konvolusi(keabuan, MASK_GARIS_H)
-    rv = konvolusi(keabuan, MASK_GARIS_V)
+    rh = korelasi(keabuan, MASK_GARIS_H)
+    rv = korelasi(keabuan, MASK_GARIS_V)
     garis_h = np.abs(rh) >= ambang
     garis_v = np.abs(rv) >= ambang
     return rh, rv, garis_h, garis_v
@@ -241,8 +249,8 @@ def deteksi_garis(
 
 def deteksi_prewitt(keabuan: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Hitung gradien Prewitt Gx, Gy, dan magnitudonya."""
-    gx = konvolusi(keabuan, MASK_GX)
-    gy = konvolusi(keabuan, MASK_GY)
+    gx = korelasi(keabuan, MASK_GX)
+    gy = korelasi(keabuan, MASK_GY)
     magnitudo = np.hypot(gx, gy)
     return gx, gy, magnitudo
 
@@ -250,6 +258,18 @@ def deteksi_prewitt(keabuan: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.nda
 def binerkan(peta: np.ndarray, ambang: float) -> np.ndarray:
     """Ubah peta respons menjadi citra biner 0/255."""
     return np.where(peta >= ambang, 255, 0).astype(np.uint8)
+
+
+def deteksi_tepi(
+    keabuan: np.ndarray, ambang: float = AMBANG_TEPI
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Hitung gradien Prewitt sekaligus peta tepi binernya.
+
+    Penggabungan ini dipakai agar waktu eksekusi Prewitt mencakup beban
+    kerja yang sama dengan deteksi titik, yaitu sampai peta biner jadi.
+    """
+    gx, gy, magnitudo = deteksi_prewitt(keabuan)
+    return gx, gy, magnitudo, binerkan(magnitudo, ambang)
 
 
 def overlay_titik(keabuan: np.ndarray, titik: np.ndarray) -> np.ndarray:
@@ -312,7 +332,9 @@ def hitung_metrik(
     tepi: np.ndarray,
 ) -> dict[str, float | int]:
     """Kumpulkan angka pembanding untuk laporan."""
-    varians_laplacian = float(cv2.Laplacian(keabuan, cv2.CV_64F).var())
+    # Pakai mask 8 tetangga yang sama dengan deteksi titik, bukan kernel
+    # bawaan cv2.Laplacian yang hanya memakai 4 tetangga.
+    varians_laplacian = float(korelasi(keabuan, MASK_TITIK).var())
     garis = garis_h | garis_v
     return {
         "rerata_intensitas": round(float(keabuan.mean()), 2),
@@ -408,13 +430,18 @@ def normalkan(peta: np.ndarray, batas_atas: float) -> np.ndarray:
     return np.clip(peta / max(batas_atas, 1e-6) * 255.0, 0, 255).astype(np.uint8)
 
 
+def simpan_citra(array: np.ndarray, tujuan: Path) -> None:
+    """Simpan citra dan gagal keras bila penulisan tidak berhasil."""
+    tujuan.parent.mkdir(parents=True, exist_ok=True)
+    if not cv2.imwrite(str(tujuan), array):
+        raise OSError(f"Gagal menulis gambar: {tujuan}")
+
+
 def simpan_panel(array: np.ndarray, tujuan: Path) -> None:
     """Simpan satu panel tanpa judul pada resolusi asli."""
-    tujuan.parent.mkdir(parents=True, exist_ok=True)
     if array.ndim == 3:
-        cv2.imwrite(str(tujuan), cv2.cvtColor(array, cv2.COLOR_RGB2BGR))
-    else:
-        cv2.imwrite(str(tujuan), array)
+        array = cv2.cvtColor(array, cv2.COLOR_RGB2BGR)
+    simpan_citra(array, tujuan)
 
 
 def komposit(
@@ -492,7 +519,7 @@ def buat_gambar(hasil: dict, konteks: dict) -> None:
     tepi = konteks["tepi"]
 
     # Panel tunggal tanpa judul, berguna untuk tata letak laporan.
-    cv2.imwrite(str(DIR_PANEL / f"{kunci}_00_asli.png"), konteks["warna"])
+    simpan_citra(konteks["warna"], DIR_PANEL / f"{kunci}_00_asli.png")
     simpan_panel(keabuan, DIR_PANEL / f"{kunci}_01_keabuan.png")
     simpan_panel(
         normalkan(respons, batas_respons), DIR_PANEL / f"{kunci}_02_respons_titik.png"
@@ -910,13 +937,13 @@ def main() -> None:
 
     for item in DAFTAR_CITRA:
         berkas = DIR_CITRA / item["berkas"]
-        warna, keabuan = muat_citra(berkas, item["lebar_proses"])
+        warna, keabuan, ukuran_asli = muat_citra(berkas, item["lebar_proses"])
         tinggi, lebar = keabuan.shape
 
-        selisih = verifikasi_konvolusi(keabuan)
+        selisih = verifikasi_korelasi(keabuan)
         if selisih > 1e-3:
             raise RuntimeError(
-                f"Konvolusi manual berbeda dari cv2.filter2D sebesar {selisih:.4f}."
+                f"Korelasi manual berbeda dari cv2.filter2D sebesar {selisih:.4f}."
             )
 
         (respons, ambang_titik, titik), waktu_titik = waktu_ms(
@@ -925,11 +952,10 @@ def main() -> None:
         (rh, rv, garis_h, garis_v), waktu_garis = waktu_ms(
             lambda: deteksi_garis(keabuan, AMBANG_GARIS)
         )
-        (gx, gy, magnitudo), waktu_prewitt = waktu_ms(
-            lambda: deteksi_prewitt(keabuan)
+        (gx, gy, magnitudo, tepi), waktu_prewitt = waktu_ms(
+            lambda: deteksi_tepi(keabuan, AMBANG_TEPI)
         )
 
-        tepi = binerkan(magnitudo, AMBANG_TEPI)
         metrik = hitung_metrik(
             keabuan,
             respons,
@@ -944,17 +970,14 @@ def main() -> None:
             magnitudo,
             tepi,
         )
-        metrik["waktu_titik_ms"] = round(waktu_titik, 2)
-        metrik["waktu_garis_ms"] = round(waktu_garis, 2)
-        metrik["waktu_prewitt_ms"] = round(waktu_prewitt, 2)
 
         hasil = {
             "kunci": item["kunci"],
             "judul": item["judul"],
             "berkas": str(berkas.relative_to(AKAR)),
-            "ukuran_asli": [warna.shape[1], warna.shape[0]],
+            "ukuran_asli": list(ukuran_asli),
             "ukuran_proses": [lebar, tinggi],
-            "selisih_konvolusi": selisih,
+            "selisih_korelasi": selisih,
             "metrik": metrik,
             "sapuan_titik": sapuan_ambang_titik(respons),
             "sapuan_garis": sapuan_ambang_garis(rh, rv),
@@ -981,9 +1004,9 @@ def main() -> None:
         konteks_semua.append(konteks)
 
         print(f"\n=== {item['judul']} ===")
-        print(f"Ukuran asli   : {warna.shape[1]} x {warna.shape[0]}")
+        print(f"Ukuran asli   : {ukuran_asli[0]} x {ukuran_asli[1]}")
         print(f"Ukuran proses : {lebar} x {tinggi}")
-        print(f"Selisih konvolusi manual vs OpenCV: {selisih:.6f}")
+        print(f"Selisih korelasi manual vs OpenCV: {selisih:.6f}")
         print(
             f"Deteksi titik : T={ambang_titik:.1f}, "
             f"{metrik['jumlah_titik']} titik "

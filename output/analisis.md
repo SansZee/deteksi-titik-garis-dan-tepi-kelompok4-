@@ -48,6 +48,11 @@ titik terisolasi, tetapi juga pada sudut, ujung garis, tekstur halus, dan derau.
 Ambang ditetapkan dari persentil 99,5 respons tiap citra supaya jumlah titik yang
 ditampilkan terkendali.
 
+Operasi mask yang dipakai adalah korelasi silang, yaitu mask dipakai tanpa
+dibalik 180 derajat. Untuk mask Laplacian dan mask garis yang simetris,
+hasilnya sama dengan konvolusi. Implementasi manual juga diverifikasi terhadap
+`cv2.filter2D` dengan selisih maksimum 0,000000.
+
 | Besaran | Burj Khalifa | Jalan Route 66 |
 |---|---|---|
 | Rerata respons titik | 33,71 | 37,82 |
@@ -86,11 +91,12 @@ Pengaruh ambang terlihat dari sapuan berikut:
 
 Semakin tinggi ambang, semakin sedikit titik yang bertahan. Pada p99,99, Burj
 Khalifa hanya menyisakan 11 titik yang tersebar di bagian kaki menara dan satu
-titik di fasad, sedangkan Route 66 menyisakan 43 titik yang seluruhnya berada di
-tiang listrik. Tiang listrik menjadi struktur paling menonjol pada deteksi titik
-karena tipis, terang, dan dikelilingi latar yang relatif rata. Meskipun bentuknya
-garis, lebarnya hanya satu sampai dua piksel sehingga respons Laplacian-nya
-tinggi di hampir sepanjang tiang.
+titik di fasad, sedangkan Route 66 menyisakan 43 titik. Sebanyak 41 dari 43
+titik itu berada di tiang listrik, dua sisanya tersebar di latar. Tiang listrik
+menjadi struktur paling menonjol pada deteksi titik karena tipis, terang, dan
+dikelilingi latar yang relatif rata. Meskipun bentuknya garis, lebarnya hanya
+satu sampai dua piksel sehingga respons Laplacian-nya tinggi di hampir
+sepanjang tiang.
 
 ## 3. Deteksi garis
 
@@ -105,7 +111,7 @@ H = -1 -1 -1      V = -1  2 -1
 Mask `H` memberi respons tinggi pada garis mendatar karena baris tengahnya
 berbobot positif, sedangkan baris atas dan bawah berbobot negatif. Mask `V`
 melakukan hal yang sama untuk garis tegak. Respons dihitung sebagai nilai
-mutlak hasil konvolusi, sehingga garis terang di atas latar gelap maupun garis
+mutlak hasil korelasi, sehingga garis terang di atas latar gelap maupun garis
 gelap di atas latar terang sama-sama terdeteksi. Piksel ditandai garis bila
 `|R| >= 200`.
 
@@ -181,7 +187,8 @@ Gx = -1  0  1      Gy = -1 -1 -1
 vertikal. `Gy` menghitung beda ke arah tegak, sehingga kuat pada tepi horizontal.
 Kedua mask dapat dipandang sebagai turunan pertama yang disertai perataan tiga
 piksel pada arah tegak lurusnya. Perataan ini menekan derau, tetapi membuat tepi
-sedikit lebih tebal.
+sedikit lebih tebal. Karena keluaran yang dipakai adalah magnitudo, perbedaan
+tanda antara korelasi dan konvolusi tidak memengaruhi hasil.
 
 Magnitudo dihitung dengan `|G| = akar(Gx^2 + Gy^2)`. Ambang tepi ditetapkan 200
 dalam satuan magnitudo, sama untuk kedua citra, lalu piksel dengan `|G| >= 200`
@@ -276,9 +283,10 @@ ke sekitar 100 sampai 150, dengan konsekuensi tepi lemah dan derau ikut muncul.
 5. Konversi ke citra keabuan menghilangkan informasi warna. Pada citra ini
    kontras utama masih terbawa oleh kecerahan, tetapi dua warna berbeda yang
    kecerahannya sama akan melebur.
-6. Konvolusi manual sudah diverifikasi terhadap `cv2.filter2D` dengan selisih
-   maksimum 0,000000, sehingga hasil bukan disebabkan oleh perbedaan
-   implementasi pustaka.
+6. Operasi mask manual sudah diverifikasi terhadap `cv2.filter2D` dengan selisih
+   maksimum 0,000000, sehingga hasil bukan disebabkan oleh perbedaan implementasi
+   pustaka. Operasi ini adalah korelasi silang; untuk mask Laplacian, garis, dan
+   Prewitt yang dipakai, hasilnya setara dengan konvolusi.
 
 ## 8. Kesimpulan
 

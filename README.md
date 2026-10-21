@@ -27,13 +27,17 @@ Burj Khalifa tidak diperbesar karena ukurannya sudah lebih kecil dari 800 piksel
 
 1. Citra dibaca dari AVIF, diubah ke keabuan dengan rumus luminansi standar,
    lalu diproses pada ukuran yang telah ditentukan.
-2. Konvolusi 3x3 diimplementasikan manual dengan NumPy dan diverifikasi
-   terhadap `cv2.filter2D`. Selisih maksimum yang diperoleh 0,000000.
+2. Operasi mask 3x3 diimplementasikan manual dengan NumPy dan diverifikasi
+   terhadap `cv2.filter2D`. Operasi ini secara teknis korelasi silang karena
+   mask dipakai tanpa dibalik 180 derajat, sama seperti `cv2.filter2D`.
+   Selisih maksimum yang diperoleh 0,000000. Untuk mask Laplacian dan garis yang
+   simetris, hasilnya sama dengan konvolusi. Untuk Prewitt, perbedaannya hanya
+   tanda dan hilang saat diambil magnitudo.
 3. Deteksi titik memakai mask Laplacian 8 tetangga. Respons dihitung sebagai
-   nilai mutlak hasil konvolusi, lalu titik ditandai dengan ambang persentil
+   nilai mutlak hasil korelasi, lalu titik ditandai dengan ambang persentil
    99,5 respons tiap citra.
 4. Deteksi garis memakai mask horizontal dan vertikal 3x3. Respons dihitung
-   sebagai nilai mutlak hasil konvolusi, lalu piksel ditandai garis bila
+   sebagai nilai mutlak hasil korelasi, lalu piksel ditandai garis bila
    `|R| >= 200`. Garis horizontal ditampilkan merah, garis vertikal biru, dan
    piksel yang lolos kedua mask kuning.
 5. Deteksi tepi Prewitt memakai mask `Gx` dan `Gy`, magnitudo
@@ -88,6 +92,8 @@ Atau langsung memakai venv ADCB:
 ../.venv/bin/python src/tepi.py
 ```
 
+Dijalankan dan diuji dengan Python 3.13.12 dari venv ADCB.
+
 ## Keluaran
 
 ```
@@ -116,6 +122,10 @@ output/
 | Kepadatan garis (T=200) | 5,228% | 0,363% |
 | Kepadatan tepi Prewitt (T=200) | 3,837% | 1,386% |
 | Rasio energi Gx : Gy | 1,53 | 0,81 |
+
+Kepadatan titik kedua citra sama karena ambang ditetapkan dari persentil yang
+sama, jadi angka itu bukan ukuran kerumitan citra. Yang berbeda adalah nilai
+ambang dan sebaran titiknya.
 
 Deteksi garis menonjolkan arah struktur yang berbeda pada kedua citra. Burj
 Khalifa didominasi garis vertikal dari siluet dan fasad menara, sedangkan

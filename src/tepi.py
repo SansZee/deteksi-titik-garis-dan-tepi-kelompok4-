@@ -665,7 +665,7 @@ def main() -> None:
 
     for item in DAFTAR_CITRA:
         berkas = DIR_CITRA / item["berkas"]
-        warna, keabuan = muat_citra(berkas, item["lebar_proses"])
+        warna, keabuan, ukuran_asli = muat_citra(berkas, item["lebar_proses"])
         tinggi, lebar = keabuan.shape
 
         selisih = verifikasi_konvolusi(keabuan)
@@ -680,7 +680,7 @@ def main() -> None:
             "kunci": item["kunci"],
             "judul": item["judul"],
             "berkas": str(berkas.relative_to(AKAR)),
-            "ukuran_asli": [warna.shape[1], warna.shape[0]],
+            "ukuran_asli": list(ukuran_asli),
             "ukuran_proses": [lebar, tinggi],
             "selisih_konvolusi": selisih,
             "operator": {},
@@ -688,7 +688,7 @@ def main() -> None:
         }
 
         print(f"\n=== {item['judul']} ===")
-        print(f"Ukuran asli   : {warna.shape[1]} x {warna.shape[0]}")
+        print(f"Ukuran asli   : {ukuran_asli[0]} x {ukuran_asli[1]}")
         print(f"Ukuran proses : {lebar} x {tinggi}")
         print(f"Selisih konvolusi manual vs OpenCV: {selisih:.6f}")
 
