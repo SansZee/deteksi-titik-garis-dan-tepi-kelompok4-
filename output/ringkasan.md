@@ -12,6 +12,17 @@
 | Ambang titik (persentil 99.5) | 512.0 | 247.0 |
 | Jumlah titik | 552 | 2148 |
 | Kepadatan titik (%) | 0.504 | 0.504 |
+| Rerata respons garis \|Rh\| | 18.61 | 21.08 |
+| Maksimum respons garis \|Rh\| | 724.0 | 489.0 |
+| Rerata respons garis \|Rv\| | 20.98 | 18.92 |
+| Maksimum respons garis \|Rv\| | 864.0 | 797.0 |
+| Ambang garis (T=200) | 200.0 | 200.0 |
+| Jumlah piksel garis horizontal | 2690 | 935 |
+| Jumlah piksel garis vertikal | 3291 | 617 |
+| Jumlah piksel garis gabungan | 5725 | 1549 |
+| Piksel tumpang tindih H dan V | 256 | 3 |
+| Kepadatan garis (%) | 5.228 | 0.363 |
+| Rasio respons \|Rh\| : \|Rv\| | 0.89 | 1.11 |
 | Rerata magnitudo \|G\| | 27.07 | 32.01 |
 | Maksimum magnitudo \|G\| | 583.3 | 433.0 |
 | Jumlah piksel tepi | 4202 | 5910 |
@@ -30,6 +41,19 @@
 | Jalan Route 66 | 99.5 | 247.0 | 2148 | 0.504 |
 | Jalan Route 66 | 99.9 | 343.0 | 428 | 0.1 |
 | Jalan Route 66 | 99.99 | 663.1 | 43 | 0.01 |
+
+## Sapuan ambang deteksi garis
+
+| Citra | ambang | jumlah_garis_h | jumlah_garis_v | jumlah_garis | kepadatan_persen |
+|---|---|---|---|---|---|
+| Burj Khalifa | 100 | 7084 | 7989 | 12707 | 11.605 |
+| Burj Khalifa | 150 | 4319 | 5229 | 8704 | 7.949 |
+| Burj Khalifa | 200 | 2690 | 3291 | 5725 | 5.228 |
+| Burj Khalifa | 250 | 1674 | 2115 | 3704 | 3.383 |
+| Jalan Route 66 | 100 | 9981 | 5721 | 15362 | 3.603 |
+| Jalan Route 66 | 150 | 2906 | 1414 | 4299 | 1.008 |
+| Jalan Route 66 | 200 | 935 | 617 | 1549 | 0.363 |
+| Jalan Route 66 | 250 | 269 | 332 | 599 | 0.14 |
 
 ## Sapuan ambang Prewitt
 

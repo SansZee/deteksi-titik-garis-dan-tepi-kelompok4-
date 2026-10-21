@@ -1,9 +1,10 @@
-"""Deteksi titik dan deteksi tepi Prewitt pada dua citra digital.
+"""Deteksi titik, garis, dan tepi Prewitt pada dua citra digital.
 
 Bagian tugas yang diimplementasikan:
     1. Dua citra masukan, dikonversi ke citra keabuan (grayscale).
     2. Deteksi titik dengan mask 8 tetangga.
-    3. Deteksi tepi dengan operator Prewitt.
+    3. Deteksi garis dengan mask horizontal dan vertikal.
+    4. Deteksi tepi dengan operator Prewitt.
 
 Jalankan dari direktori repositori:
     python src/deteksi.py
@@ -46,6 +47,11 @@ PERSENTIL_SAPUAN = [99.0, 99.5, 99.9, 99.99]
 AMBANG_TEPI = 200
 AMBANG_SAPUAN = [100, 150, 200, 250]
 
+# Ambang garis dalam satuan respons mask. Mask garis berbobot 6 sehingga
+# respons kira-kira 6 x kontras; T=200 setara kontras sekitar 33 tingkat.
+AMBANG_GARIS = 200
+AMBANG_GARIS_SAPUAN = [100, 150, 200, 250]
+
 # Mask deteksi titik: Laplacian 8 tetangga.
 MASK_TITIK = np.array(
     [
@@ -71,6 +77,26 @@ MASK_GY = np.array(
         [-1, -1, -1],
         [0, 0, 0],
         [1, 1, 1],
+    ],
+    dtype=np.float32,
+)
+
+# Mask deteksi garis. Mask horizontal menonjolkan garis mendatar, mask
+# vertikal menonjolkan garis tegak.
+MASK_GARIS_H = np.array(
+    [
+        [-1, -1, -1],
+        [2, 2, 2],
+        [-1, -1, -1],
+    ],
+    dtype=np.float32,
+)
+
+MASK_GARIS_V = np.array(
+    [
+        [-1, 2, -1],
+        [-1, 2, -1],
+        [-1, 2, -1],
     ],
     dtype=np.float32,
 )
@@ -165,7 +191,7 @@ def konvolusi(keabuan: np.ndarray, mask: np.ndarray) -> np.ndarray:
 def verifikasi_konvolusi(keabuan: np.ndarray) -> float:
     """Bandingkan konvolusi manual dengan cv2.filter2D untuk semua mask."""
     selisih = 0.0
-    for mask in (MASK_TITIK, MASK_GX, MASK_GY):
+    for mask in (MASK_TITIK, MASK_GARIS_H, MASK_GARIS_V, MASK_GX, MASK_GY):
         manual = konvolusi(keabuan, mask)
         acuan = cv2.filter2D(
             keabuan.astype(np.float32),
@@ -178,7 +204,7 @@ def verifikasi_konvolusi(keabuan: np.ndarray) -> float:
 
 
 # ---------------------------------------------------------------------------
-# Deteksi titik dan tepi
+# Deteksi titik, garis, dan tepi
 # ---------------------------------------------------------------------------
 
 
@@ -194,6 +220,23 @@ def deteksi_titik(
     ambang = float(np.percentile(respons, persentil))
     titik = respons >= ambang
     return respons, ambang, titik
+
+
+def deteksi_garis(
+    keabuan: np.ndarray, ambang: float = AMBANG_GARIS
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Hitung respons garis horizontal/vertikal dan peta binernya.
+
+    Mask horizontal memberi respons tinggi pada garis mendatar, sedangkan
+    mask vertikal pada garis tegak. Nilai mutlak dipakai agar garis terang
+    di atas latar gelap maupun garis gelap di atas latar terang ikut
+    terdeteksi. Piksel dianggap garis bila |R| >= ambang.
+    """
+    rh = konvolusi(keabuan, MASK_GARIS_H)
+    rv = konvolusi(keabuan, MASK_GARIS_V)
+    garis_h = np.abs(rh) >= ambang
+    garis_v = np.abs(rv) >= ambang
+    return rh, rv, garis_h, garis_v
 
 
 def deteksi_prewitt(keabuan: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -223,6 +266,21 @@ def overlay_titik(keabuan: np.ndarray, titik: np.ndarray) -> np.ndarray:
     return rgb
 
 
+def overlay_garis(
+    keabuan: np.ndarray, garis_h: np.ndarray, garis_v: np.ndarray
+) -> np.ndarray:
+    """Tandai garis horizontal merah dan garis vertikal biru.
+
+    Piksel yang lolos kedua mask diberi warna kuning agar tumpang tindih
+    arah tetap terlihat dan dapat dibahas pada analisis.
+    """
+    rgb = cv2.cvtColor(keabuan, cv2.COLOR_GRAY2RGB)
+    rgb[garis_h] = (210, 35, 35)
+    rgb[garis_v] = (35, 80, 210)
+    rgb[garis_h & garis_v] = (230, 190, 30)
+    return rgb
+
+
 # ---------------------------------------------------------------------------
 # Metrik
 # ---------------------------------------------------------------------------
@@ -244,6 +302,10 @@ def hitung_metrik(
     respons: np.ndarray,
     ambang_titik: float,
     titik: np.ndarray,
+    rh: np.ndarray,
+    rv: np.ndarray,
+    garis_h: np.ndarray,
+    garis_v: np.ndarray,
     gx: np.ndarray,
     gy: np.ndarray,
     magnitudo: np.ndarray,
@@ -251,6 +313,7 @@ def hitung_metrik(
 ) -> dict[str, float | int]:
     """Kumpulkan angka pembanding untuk laporan."""
     varians_laplacian = float(cv2.Laplacian(keabuan, cv2.CV_64F).var())
+    garis = garis_h | garis_v
     return {
         "rerata_intensitas": round(float(keabuan.mean()), 2),
         "simpangan_baku_intensitas": round(float(keabuan.std()), 2),
@@ -260,6 +323,19 @@ def hitung_metrik(
         "ambang_titik": round(ambang_titik, 1),
         "jumlah_titik": int(titik.sum()),
         "kepadatan_titik_persen": round(100 * float(titik.mean()), 3),
+        "rerata_respons_garis_h": round(float(np.abs(rh).mean()), 2),
+        "maks_respons_garis_h": round(float(np.abs(rh).max()), 1),
+        "rerata_respons_garis_v": round(float(np.abs(rv).mean()), 2),
+        "maks_respons_garis_v": round(float(np.abs(rv).max()), 1),
+        "ambang_garis": round(AMBANG_GARIS, 1),
+        "jumlah_garis_h": int(garis_h.sum()),
+        "jumlah_garis_v": int(garis_v.sum()),
+        "jumlah_garis": int(garis.sum()),
+        "jumlah_garis_tumpang": int((garis_h & garis_v).sum()),
+        "kepadatan_garis_persen": round(100 * float(garis.mean()), 3),
+        "rasio_respons_garis_h_v": round(
+            float(np.abs(rh).mean() / max(np.abs(rv).mean(), 1e-6)), 3
+        ),
         "rerata_magnitudo": round(float(magnitudo.mean()), 2),
         "maks_magnitudo": round(float(magnitudo.max()), 1),
         "jumlah_tepi": int((tepi > 0).sum()),
@@ -283,6 +359,25 @@ def sapuan_ambang_titik(respons: np.ndarray) -> list[dict]:
                 "ambang": round(ambang, 1),
                 "jumlah_titik": jumlah,
                 "kepadatan_persen": round(100 * jumlah / total, 3),
+            }
+        )
+    return baris
+
+
+def sapuan_ambang_garis(rh: np.ndarray, rv: np.ndarray) -> list[dict]:
+    """Hitung jumlah garis horizontal dan vertikal pada beberapa ambang."""
+    baris = []
+    for ambang in AMBANG_GARIS_SAPUAN:
+        garis_h = np.abs(rh) >= ambang
+        garis_v = np.abs(rv) >= ambang
+        gabungan = garis_h | garis_v
+        baris.append(
+            {
+                "ambang": ambang,
+                "jumlah_garis_h": int(garis_h.sum()),
+                "jumlah_garis_v": int(garis_v.sum()),
+                "jumlah_garis": int(gabungan.sum()),
+                "kepadatan_persen": round(100 * float(gabungan.mean()), 3),
             }
         )
     return baris
@@ -375,17 +470,25 @@ def buat_gambar(hasil: dict, konteks: dict) -> None:
     keabuan = konteks["keabuan"]
     respons = konteks["respons"]
     titik = konteks["titik"]
+    rh = konteks["rh"]
+    rv = konteks["rv"]
+    garis_h = konteks["garis_h"]
+    garis_v = konteks["garis_v"]
     gx = konteks["gx"]
     gy = konteks["gy"]
     magnitudo = konteks["magnitudo"]
 
     batas_respons = float(np.percentile(respons, 99.9))
+    batas_garis = float(
+        max(np.percentile(np.abs(rh), 99.9), np.percentile(np.abs(rv), 99.9))
+    )
     batas_gradien = float(
         max(np.percentile(np.abs(gx), 99.9), np.percentile(np.abs(gy), 99.9))
     )
     batas_magnitudo = float(np.percentile(magnitudo, 99.9))
 
     gambar_titik = overlay_titik(keabuan, titik)
+    gambar_garis = overlay_garis(keabuan, garis_h, garis_v)
     tepi = konteks["tepi"]
 
     # Panel tunggal tanpa judul, berguna untuk tata letak laporan.
@@ -404,6 +507,21 @@ def buat_gambar(hasil: dict, konteks: dict) -> None:
         normalkan(magnitudo, batas_magnitudo), DIR_PANEL / f"{kunci}_07_magnitudo.png"
     )
     simpan_panel(tepi, DIR_PANEL / f"{kunci}_08_tepi_biner.png")
+    simpan_panel(
+        normalkan(np.abs(rh), batas_garis), DIR_PANEL / f"{kunci}_09_garis_h.png"
+    )
+    simpan_panel(
+        normalkan(np.abs(rv), batas_garis), DIR_PANEL / f"{kunci}_10_garis_v.png"
+    )
+    simpan_panel(
+        np.where(garis_h, 255, 0).astype(np.uint8),
+        DIR_PANEL / f"{kunci}_11_garis_biner_h.png",
+    )
+    simpan_panel(
+        np.where(garis_v, 255, 0).astype(np.uint8),
+        DIR_PANEL / f"{kunci}_12_garis_biner_v.png",
+    )
+    simpan_panel(gambar_garis, DIR_PANEL / f"{kunci}_13_garis_overlay.png")
 
     potret = keabuan.shape[0] > keabuan.shape[1]
 
@@ -427,6 +545,34 @@ def buat_gambar(hasil: dict, konteks: dict) -> None:
         ],
         DIR_KOMPOSIT / f"{kunci}_titik.png",
         nkolom=4 if potret else 2,
+    )
+
+    # Komposit deteksi garis.
+    komposit(
+        [
+            {"array": keabuan, "judul": "Citra keabuan"},
+            {
+                "array": np.abs(rh),
+                "judul": "|Rh| (garis horizontal)",
+                "vmin": 0,
+                "vmax": batas_garis,
+            },
+            {
+                "array": np.abs(rv),
+                "judul": "|Rv| (garis vertikal)",
+                "vmin": 0,
+                "vmax": batas_garis,
+            },
+            {
+                "array": np.where(garis_h | garis_v, 255, 0).astype(np.uint8),
+                "judul": f"Garis biner (T={AMBANG_GARIS})",
+                "vmin": 0,
+                "vmax": 255,
+            },
+            {"array": gambar_garis, "judul": "Garis pada citra"},
+        ],
+        DIR_KOMPOSIT / f"{kunci}_garis.png",
+        nkolom=5 if potret else 3,
     )
 
     # Komposit Prewitt.
@@ -468,7 +614,7 @@ def buat_gambar_perbandingan(
 ) -> None:
     """Buat satu gambar ringkas untuk membandingkan kedua citra."""
     lebar = 7.2
-    nkolom = 3
+    nkolom = 4
     lebar_panel = lebar / nkolom
     tinggi_baris = [
         lebar_panel * konteks["keabuan"].shape[0] / konteks["keabuan"].shape[1]
@@ -484,11 +630,17 @@ def buat_gambar_perbandingan(
         squeeze=False,
     )
 
-    judul_kolom = ["Citra keabuan", "Deteksi titik", f"Tepi Prewitt (T={AMBANG_TEPI})"]
+    judul_kolom = [
+        "Citra keabuan",
+        "Deteksi titik",
+        "Deteksi garis",
+        f"Tepi Prewitt (T={AMBANG_TEPI})",
+    ]
     for baris, (hasil, konteks) in enumerate(zip(hasil_semua, konteks_semua)):
         tampilan = [
             konteks["keabuan"],
             overlay_titik(konteks["keabuan"], konteks["titik"]),
+            overlay_garis(konteks["keabuan"], konteks["garis_h"], konteks["garis_v"]),
             np.where(konteks["magnitudo"] >= AMBANG_TEPI, 255, 0).astype(np.uint8),
         ]
         for kolom, isi in enumerate(tampilan):
@@ -588,6 +740,43 @@ def buat_gambar_sapuan(
     gambar.savefig(DIR_KOMPOSIT / "sapuan_ambang_prewitt.png")
     plt.close(gambar)
 
+    # Sapuan ambang garis: 2 baris (citra) x 4 kolom (ambang).
+    # Garis horizontal ditampilkan merah dan vertikal biru agar arahnya
+    # dapat dibandingkan langsung pada tiap ambang.
+    gambar, sumbu = plt.subplots(
+        len(hasil_semua),
+        len(AMBANG_GARIS_SAPUAN),
+        figsize=(7.2, 4.4),
+        constrained_layout=True,
+    )
+    for baris, (hasil, konteks) in enumerate(zip(hasil_semua, konteks_semua)):
+        rh = konteks["rh"]
+        rv = konteks["rv"]
+        for kolom, ambang in enumerate(AMBANG_GARIS_SAPUAN):
+            garis_h = np.abs(rh) >= ambang
+            garis_v = np.abs(rv) >= ambang
+            tampilan = overlay_garis(konteks["keabuan"], garis_h, garis_v)
+            aks = sumbu[baris, kolom]
+            aks.imshow(tampilan, vmin=0, vmax=255, interpolation="nearest")
+            aks.set_axis_off()
+            aks.set_title(
+                f"T={ambang}\nH={int(garis_h.sum())}  V={int(garis_v.sum())}",
+                fontsize=8,
+                pad=2,
+            )
+        sumbu[baris, 0].text(
+            -0.08,
+            0.5,
+            hasil["judul"],
+            transform=sumbu[baris, 0].transAxes,
+            rotation=90,
+            va="center",
+            ha="right",
+            fontsize=8,
+        )
+    gambar.savefig(DIR_KOMPOSIT / "sapuan_ambang_garis.png")
+    plt.close(gambar)
+
 
 # ---------------------------------------------------------------------------
 # Keluaran tabel
@@ -623,6 +812,17 @@ def tulis_tabel(hasil_semua: list[dict]) -> None:
         "ambang_titik": f"Ambang titik (persentil {PERSENTIL_TITIK:g})",
         "jumlah_titik": "Jumlah titik",
         "kepadatan_titik_persen": "Kepadatan titik (%)",
+        "rerata_respons_garis_h": "Rerata respons garis |Rh|",
+        "maks_respons_garis_h": "Maksimum respons garis |Rh|",
+        "rerata_respons_garis_v": "Rerata respons garis |Rv|",
+        "maks_respons_garis_v": "Maksimum respons garis |Rv|",
+        "ambang_garis": f"Ambang garis (T={AMBANG_GARIS})",
+        "jumlah_garis_h": "Jumlah piksel garis horizontal",
+        "jumlah_garis_v": "Jumlah piksel garis vertikal",
+        "jumlah_garis": "Jumlah piksel garis gabungan",
+        "jumlah_garis_tumpang": "Piksel tumpang tindih H dan V",
+        "kepadatan_garis_persen": "Kepadatan garis (%)",
+        "rasio_respons_garis_h_v": "Rasio respons |Rh| : |Rv|",
         "rerata_magnitudo": "Rerata magnitudo |G|",
         "maks_magnitudo": "Maksimum magnitudo |G|",
         "jumlah_tepi": "Jumlah piksel tepi",
@@ -631,7 +831,14 @@ def tulis_tabel(hasil_semua: list[dict]) -> None:
     }
 
     def format_angka(kunci: str, nilai: float) -> str:
-        if kunci in {"jumlah_titik", "jumlah_tepi"}:
+        if kunci in {
+            "jumlah_titik",
+            "jumlah_tepi",
+            "jumlah_garis_h",
+            "jumlah_garis_v",
+            "jumlah_garis",
+            "jumlah_garis_tumpang",
+        }:
             return f"{int(nilai)}"
         if kunci.endswith("_persen"):
             return f"{nilai:.3f}"
@@ -639,6 +846,9 @@ def tulis_tabel(hasil_semua: list[dict]) -> None:
             "varians_laplacian",
             "ambang_titik",
             "maks_respons_titik",
+            "ambang_garis",
+            "maks_respons_garis_h",
+            "maks_respons_garis_v",
             "maks_magnitudo",
         }:
             return f"{nilai:.1f}"
@@ -660,6 +870,12 @@ def tulis_tabel(hasil_semua: list[dict]) -> None:
             baris_titik.append({"Citra": hasil["judul"], **isi})
     pd.DataFrame(baris_titik).to_csv(DIR_TABEL / "ambang_titik.csv", index=False)
 
+    baris_garis = []
+    for hasil in hasil_semua:
+        for isi in hasil["sapuan_garis"]:
+            baris_garis.append({"Citra": hasil["judul"], **isi})
+    pd.DataFrame(baris_garis).to_csv(DIR_TABEL / "ambang_garis.csv", index=False)
+
     baris_tepi = []
     for hasil in hasil_semua:
         for isi in hasil["sapuan_prewitt"]:
@@ -673,6 +889,8 @@ def tulis_tabel(hasil_semua: list[dict]) -> None:
         berkas.write(tabel_markdown(tabel_metrik))
         berkas.write("\n\n## Sapuan ambang deteksi titik\n\n")
         berkas.write(tabel_markdown(pd.DataFrame(baris_titik)))
+        berkas.write("\n\n## Sapuan ambang deteksi garis\n\n")
+        berkas.write(tabel_markdown(pd.DataFrame(baris_garis)))
         berkas.write("\n\n## Sapuan ambang Prewitt\n\n")
         berkas.write(tabel_markdown(pd.DataFrame(baris_tepi)))
         berkas.write("\n")
@@ -704,15 +922,30 @@ def main() -> None:
         (respons, ambang_titik, titik), waktu_titik = waktu_ms(
             lambda: deteksi_titik(keabuan, PERSENTIL_TITIK)
         )
+        (rh, rv, garis_h, garis_v), waktu_garis = waktu_ms(
+            lambda: deteksi_garis(keabuan, AMBANG_GARIS)
+        )
         (gx, gy, magnitudo), waktu_prewitt = waktu_ms(
             lambda: deteksi_prewitt(keabuan)
         )
 
         tepi = binerkan(magnitudo, AMBANG_TEPI)
         metrik = hitung_metrik(
-            keabuan, respons, ambang_titik, titik, gx, gy, magnitudo, tepi
+            keabuan,
+            respons,
+            ambang_titik,
+            titik,
+            rh,
+            rv,
+            garis_h,
+            garis_v,
+            gx,
+            gy,
+            magnitudo,
+            tepi,
         )
         metrik["waktu_titik_ms"] = round(waktu_titik, 2)
+        metrik["waktu_garis_ms"] = round(waktu_garis, 2)
         metrik["waktu_prewitt_ms"] = round(waktu_prewitt, 2)
 
         hasil = {
@@ -724,6 +957,7 @@ def main() -> None:
             "selisih_konvolusi": selisih,
             "metrik": metrik,
             "sapuan_titik": sapuan_ambang_titik(respons),
+            "sapuan_garis": sapuan_ambang_garis(rh, rv),
             "sapuan_prewitt": sapuan_ambang_prewitt(magnitudo),
         }
 
@@ -732,6 +966,10 @@ def main() -> None:
             "keabuan": keabuan,
             "respons": respons,
             "titik": titik,
+            "rh": rh,
+            "rv": rv,
+            "garis_h": garis_h,
+            "garis_v": garis_v,
             "gx": gx,
             "gy": gy,
             "magnitudo": magnitudo,
@@ -753,6 +991,13 @@ def main() -> None:
             f"{waktu_titik:.1f} ms"
         )
         print(
+            f"Deteksi garis : H={metrik['jumlah_garis_h']} piksel, "
+            f"V={metrik['jumlah_garis_v']} piksel, "
+            f"gabungan {metrik['jumlah_garis']} piksel "
+            f"({metrik['kepadatan_garis_persen']:.2f}%), "
+            f"T={AMBANG_GARIS}, {waktu_garis:.1f} ms"
+        )
+        print(
             f"Prewitt       : rerata |G|={metrik['rerata_magnitudo']:.2f}, "
             f"maks |G|={metrik['maks_magnitudo']:.1f}, "
             f"tepi T={AMBANG_TEPI} sebanyak {metrik['jumlah_tepi']} piksel "
@@ -770,8 +1015,10 @@ def main() -> None:
         "parameter": {
             "lebar_proses": LEBAR_PROSES,
             "persentil_titik": PERSENTIL_TITIK,
+            "ambang_garis": AMBANG_GARIS,
             "ambang_tepi": AMBANG_TEPI,
             "persentil_sapuan": PERSENTIL_SAPUAN,
+            "ambang_garis_sapuan": AMBANG_GARIS_SAPUAN,
             "ambang_sapuan": AMBANG_SAPUAN,
         },
         "citra": hasil_semua,

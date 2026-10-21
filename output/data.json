@@ -2,12 +2,19 @@
   "parameter": {
     "lebar_proses": 800,
     "persentil_titik": 99.5,
+    "ambang_garis": 200,
     "ambang_tepi": 200,
     "persentil_sapuan": [
       99.0,
       99.5,
       99.9,
       99.99
+    ],
+    "ambang_garis_sapuan": [
+      100,
+      150,
+      200,
+      250
     ],
     "ambang_sapuan": [
       100,
@@ -39,13 +46,25 @@
         "ambang_titik": 512.0,
         "jumlah_titik": 552,
         "kepadatan_titik_persen": 0.504,
+        "rerata_respons_garis_h": 18.61,
+        "maks_respons_garis_h": 724.0,
+        "rerata_respons_garis_v": 20.98,
+        "maks_respons_garis_v": 864.0,
+        "ambang_garis": 200,
+        "jumlah_garis_h": 2690,
+        "jumlah_garis_v": 3291,
+        "jumlah_garis": 5725,
+        "jumlah_garis_tumpang": 256,
+        "kepadatan_garis_persen": 5.228,
+        "rasio_respons_garis_h_v": 0.887,
         "rerata_magnitudo": 27.07,
         "maks_magnitudo": 583.3,
         "jumlah_tepi": 4202,
         "kepadatan_tepi_persen": 3.837,
         "rasio_energi_gx_gy": 1.528,
-        "waktu_titik_ms": 7.68,
-        "waktu_prewitt_ms": 12.39
+        "waktu_titik_ms": 3.12,
+        "waktu_garis_ms": 4.95,
+        "waktu_prewitt_ms": 5.4
       },
       "sapuan_titik": [
         {
@@ -71,6 +90,36 @@
           "ambang": 868.3,
           "jumlah_titik": 11,
           "kepadatan_persen": 0.01
+        }
+      ],
+      "sapuan_garis": [
+        {
+          "ambang": 100,
+          "jumlah_garis_h": 7084,
+          "jumlah_garis_v": 7989,
+          "jumlah_garis": 12707,
+          "kepadatan_persen": 11.605
+        },
+        {
+          "ambang": 150,
+          "jumlah_garis_h": 4319,
+          "jumlah_garis_v": 5229,
+          "jumlah_garis": 8704,
+          "kepadatan_persen": 7.949
+        },
+        {
+          "ambang": 200,
+          "jumlah_garis_h": 2690,
+          "jumlah_garis_v": 3291,
+          "jumlah_garis": 5725,
+          "kepadatan_persen": 5.228
+        },
+        {
+          "ambang": 250,
+          "jumlah_garis_h": 1674,
+          "jumlah_garis_v": 2115,
+          "jumlah_garis": 3704,
+          "kepadatan_persen": 3.383
         }
       ],
       "sapuan_prewitt": [
@@ -118,13 +167,25 @@
         "ambang_titik": 247.0,
         "jumlah_titik": 2148,
         "kepadatan_titik_persen": 0.504,
+        "rerata_respons_garis_h": 21.08,
+        "maks_respons_garis_h": 489.0,
+        "rerata_respons_garis_v": 18.92,
+        "maks_respons_garis_v": 797.0,
+        "ambang_garis": 200,
+        "jumlah_garis_h": 935,
+        "jumlah_garis_v": 617,
+        "jumlah_garis": 1549,
+        "jumlah_garis_tumpang": 3,
+        "kepadatan_garis_persen": 0.363,
+        "rasio_respons_garis_h_v": 1.114,
         "rerata_magnitudo": 32.01,
         "maks_magnitudo": 433.0,
         "jumlah_tepi": 5910,
         "kepadatan_tepi_persen": 1.386,
         "rasio_energi_gx_gy": 0.807,
-        "waktu_titik_ms": 35.21,
-        "waktu_prewitt_ms": 67.95
+        "waktu_titik_ms": 13.04,
+        "waktu_garis_ms": 18.97,
+        "waktu_prewitt_ms": 20.76
       },
       "sapuan_titik": [
         {
@@ -150,6 +211,36 @@
           "ambang": 663.1,
           "jumlah_titik": 43,
           "kepadatan_persen": 0.01
+        }
+      ],
+      "sapuan_garis": [
+        {
+          "ambang": 100,
+          "jumlah_garis_h": 9981,
+          "jumlah_garis_v": 5721,
+          "jumlah_garis": 15362,
+          "kepadatan_persen": 3.603
+        },
+        {
+          "ambang": 150,
+          "jumlah_garis_h": 2906,
+          "jumlah_garis_v": 1414,
+          "jumlah_garis": 4299,
+          "kepadatan_persen": 1.008
+        },
+        {
+          "ambang": 200,
+          "jumlah_garis_h": 935,
+          "jumlah_garis_v": 617,
+          "jumlah_garis": 1549,
+          "kepadatan_persen": 0.363
+        },
+        {
+          "ambang": 250,
+          "jumlah_garis_h": 269,
+          "jumlah_garis_v": 332,
+          "jumlah_garis": 599,
+          "kepadatan_persen": 0.14
         }
       ],
       "sapuan_prewitt": [

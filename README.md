@@ -1,4 +1,4 @@
-# Deteksi Titik dan Deteksi Tepi
+# Deteksi Titik, Garis, dan Tepi Prewitt
 
 Tugas Kelompok 4 mata kuliah Analisis Data Citra Biomedik (ADCB) tentang
 deteksi titik, garis, dan tepi pada citra digital.
@@ -7,9 +7,10 @@ Bagian yang dikerjakan dalam repositori ini:
 
 - Nomor 1: dua citra masukan yang diubah ke citra keabuan.
 - Nomor 2a: deteksi titik dengan mask 8 tetangga.
-- Nomor 2c: deteksi tepi dengan operator Prewitt, Sobel, Roberts, dan Kompas.
+- Nomor 2b: deteksi garis dengan mask horizontal dan vertikal.
+- Nomor 2c: deteksi tepi dengan operator Prewitt.
 
-Deteksi garis (2b) tidak termasuk dalam bagian ini.
+Operator Sobel, Roberts, dan kompas tidak termasuk dalam bagian ini.
 
 ## Citra
 
@@ -31,10 +32,15 @@ Burj Khalifa tidak diperbesar karena ukurannya sudah lebih kecil dari 800 piksel
 3. Deteksi titik memakai mask Laplacian 8 tetangga. Respons dihitung sebagai
    nilai mutlak hasil konvolusi, lalu titik ditandai dengan ambang persentil
    99,5 respons tiap citra.
-4. Deteksi tepi Prewitt memakai mask `Gx` dan `Gy`, magnitudo
+4. Deteksi garis memakai mask horizontal dan vertikal 3x3. Respons dihitung
+   sebagai nilai mutlak hasil konvolusi, lalu piksel ditandai garis bila
+   `|R| >= 200`. Garis horizontal ditampilkan merah, garis vertikal biru, dan
+   piksel yang lolos kedua mask kuning.
+5. Deteksi tepi Prewitt memakai mask `Gx` dan `Gy`, magnitudo
    `|G| = akar(Gx^2 + Gy^2)`, dan ambang tepi 200.
-5. Analisis pengaruh ambang dilakukan dengan sapuan persentil 99, 99,5, 99,9,
-   dan 99,99 untuk titik, serta ambang 100, 150, 200, dan 250 untuk Prewitt.
+6. Analisis pengaruh ambang dilakukan dengan sapuan persentil 99, 99,5, 99,9,
+   dan 99,99 untuk titik, serta ambang 100, 150, 200, dan 250 untuk garis dan
+   Prewitt.
 
 ### Sobel, Roberts, dan Kompas
 
@@ -105,8 +111,17 @@ output/
 |---|---|---|
 | Titik pada p99,5 | 552 titik, T=512 | 2148 titik, T=247 |
 | Kepadatan titik | 0,504% | 0,504% |
+| Garis horizontal (T=200) | 2690 piksel | 935 piksel |
+| Garis vertikal (T=200) | 3291 piksel | 617 piksel |
+| Kepadatan garis (T=200) | 5,228% | 0,363% |
 | Kepadatan tepi Prewitt (T=200) | 3,837% | 1,386% |
 | Rasio energi Gx : Gy | 1,53 | 0,81 |
+
+Deteksi garis menonjolkan arah struktur yang berbeda pada kedua citra. Burj
+Khalifa didominasi garis vertikal dari siluet dan fasad menara, sedangkan
+Route 66 memperlihatkan marka tengah, tepi jalan, tiang listrik, dan tepi papan
+Route 66. Mask garis menuntut adanya pita terang atau gelap selebar sekitar
+tiga piksel, sehingga marka tipis dan tekstur halus tidak selalu tertangkap.
 
 Prewitt menghasilkan tepi yang lebih jelas daripada deteksi titik karena
 keluarannya berupa kontur yang menyambung. Di antara kedua citra, Route 66
